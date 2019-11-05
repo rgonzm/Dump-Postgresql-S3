@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+DB_NAME=$1
+DB_USER=$2
+DB_PASS=$3
+BUCKET=$4
+
+TIMEBUCKET=$(date +"%Y%m")
+
+BUCKET_NAME="$BUCKET/$TIMEBUCKET/$DB_NAME/"
+
+URL_DUMP="your_path" #CHANGE THIS
+
+TIMESTAMP=$(date +%F_%T | tr ':' '-')
+TEMP_FILE="$DB_NAME-$TIMESTAMP.sql"
+TEMP_FILE2="$DB_NAME-FOLDER-$TIMESTAMP"
+S3_FILE="s3://$BUCKET_NAME"
+
+echo $S3_FILE
+echo $TEMP_FILE
+
+PGPASSWORD=$DB_PASS pg_dump -Fc --no-acl -h localhost -U $DB_USER $DB_NAME > $TEMP_FILE
+
+gzip $URL_DUMP$TEMP_FILE
+s3cmd put $URL_DUMP$TEMP_FILE.gz $S3_FILE
+rm "$URL_DUMP$TEMP_FILE.gz"
